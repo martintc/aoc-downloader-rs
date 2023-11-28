@@ -6,5 +6,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.75"
 config = "0.13.4"
+pico-args = "0.5.0"
 serde =  { version = "1.0.193", features = ["derive"] }
 toml = "0.8.8"

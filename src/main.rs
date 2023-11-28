@@ -1,77 +1,95 @@
-use std::{env::home_dir, process::exit, io::Write};
+use crate::config::write_config;
 
-use anyhow::Error;
-use serde::Serialize;
-use serde::Deserialize;
-use anyhow::Result;
+mod config;
+
+const HELP: &str = "\
+aoc-downloader
+
+USAGE:
+  aoc-downloader [OPTIONS]
+
+FLAGS:
+  -h, --help  Prints help information
+
+OPTIONS:
+  --day       Day number of puzzle to retrieve input file for [REQUIRED 1-25]
+  --year      Year number of puzzle to retrieve input file for [REQUIRED]
+  --output    Directory to place puzzle input file [REQUIRED]
+  --api       Api key for advent of code
+";
 
 #[derive(Debug)]
 struct Args {
     year: u32,
     day: u16,
-    apiKey: String
+    output: String,
+    api_key: Option<String>
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Configuration {
-    apiKey: String
-}
+fn parse_args() -> anyhow::Result<Args, anyhow::Error> {
+    let mut args = pico_args::Arguments::from_env();
 
-fn get_path() -> std::path::PathBuf {
-    let config_path = match home_dir() {
-            Some(home_path) => home_path,
-            None => {
-                exit(1)
-            }
-    };
-
-    let config_path = config_path.join(".config/aoc-downloader");
-
-    config_path
-}
-
-fn create_blank_config() -> anyhow::Result<(), anyhow::Error> {
-    let config = Configuration {
-        apiKey: String::from("")
-    };
-
-    let mut file = std::fs::File::create(get_path())?;
-
-    file.write_all(toml::to_string(&config).unwrap().as_bytes())?;
-
-    Ok(())
-}
-
-fn read_config() -> Result<Configuration, Error> {
-    let file_contents = std::fs::read_to_string(get_path())?;
-    let config: Configuration = toml::from_str(file_contents.as_str())?;
-    Ok(config)
-}
-
-fn get_config() -> Result<Configuration, Error> {
-    let config_path = get_path();
-    if !std::path::Path::exists(&config_path) {
-        match create_blank_config() {
-            Ok(()) => (),
-            Err(e) => panic!("Error: {}", e)
-        };
+    if args.contains(["-h", "--help"]) {
+	print!("{}", HELP);
+	std::process::exit(0);
     }
 
-    let config = match read_config() {
-        Ok(config) => config,
-        Err(e) => panic!("Error: {}", e)
+    let args = Args {
+	day: args.value_from_str("--day")?,
+	year: args.value_from_str("--year")?,
+	output: args.value_from_str("--output")?,
+	api_key: args.opt_value_from_str("--api")?
     };
-    Ok(config)
+
+    Ok(args)
+}
+
+fn check_directory_exists(path: &str) -> bool {
+    let metadata = match std::fs::metadata(path) {
+	Ok(metadata) => metadata,
+	Err(_) => return false,
+    };
+
+    if metadata.is_dir() {
+	return true;
+    }
+
+    return false;
 }
 
 
 fn main() -> anyhow::Result<(), anyhow::Error> {
-    let config = get_config();
-    match config {
-        Ok(con) => println!("{:#?}", con),
-        Err(e) => println!("{}", e)
+    // get arguments
+    let args = match parse_args() {
+	Ok(args) => args,
+	Err(_) => {
+	    print!("{}", HELP);
+	    std::process::exit(0);
+	}
     };
 
-    Ok(())
+    if args.day > 25 || args.day == 0 {
+	println!("Must be a day between 1 and 25.");
+	std::process::exit(0);
+    }
+
+    if !check_directory_exists(&args.output) {
+	println!("Directory for output does not exist.");
+	std::process::exit(0);
+    }
     
+    // get config
+    let mut config = match config::get_config() {
+	Ok(config) => config,
+	Err(e) => panic!("Error: {}", e)
+    };
+
+    if let Some(api_key) = args.api_key {
+	config.api_key = api_key;
+	write_config(&config)?;
+    }
+
+    println!("{:#?}", config);
+    
+    Ok(())
 }
