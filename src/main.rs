@@ -1,6 +1,7 @@
-use crate::config::write_config;
+use crate::{config::write_config, request::create_request_url};
 
 mod config;
+mod request;
 
 const HELP: &str = "\
 aoc-downloader
@@ -90,6 +91,9 @@ fn main() -> anyhow::Result<(), anyhow::Error> {
     }
 
     println!("{:#?}", config);
+
+    let request_url = create_request_url(args.day, args.year);
+    println!("{}", request_url);
     
     Ok(())
 }
