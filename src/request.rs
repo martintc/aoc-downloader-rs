@@ -2,7 +2,7 @@ pub fn create_request_url(day: u16, year: u32) -> String {
     format!("https://adventofcode.com/{}/day/{}/input", year, day)
 }
 
-pub fn make_request(url: &str, session_id: &str) -> anyhow::Result<(), anyhow::Error> {
+pub fn make_request(url: &str, session_id: &str) -> anyhow::Result<String, anyhow::Error> {
     let cookie = format!("session={}", session_id);
     // let body = reqwest::blocking::get(url)?.text()?;
     // let url = url.parse::<reqwest::Url>()?;
@@ -11,16 +11,10 @@ pub fn make_request(url: &str, session_id: &str) -> anyhow::Result<(), anyhow::E
 
     let client = reqwest::blocking::Client::new();
 
-    let res = client.get(url)
-    .header("Cookie", cookie)
-    .send()?;
-
-    print!("{:#?}", res);
+    let res = client.get(url).header("Cookie", cookie).send()?;
 
     let bytes = res.bytes()?;
     let body = String::from_utf8(bytes.into_iter().collect())?;
 
-    println!("Body: {}", body);
-
-    Ok(())
+    Ok(body)
 }
