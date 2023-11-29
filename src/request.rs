@@ -9,9 +9,13 @@ pub fn make_request(url: &str, session_id: &str) -> anyhow::Result<(), anyhow::E
     // let mut request = reqwest::Request::new(reqwest::Method::GET, url);
     // request.headers.insert("Cookie", cookie);
 
-    let body = reqwest::blocking::get(url).
-    
-    println!("response: {}", body);
+    let client = reqwest::blocking::Client::new();
+
+    let res = client.get(url)
+    .header("Cookie", cookie)
+    .send()?;
+
+    print!("{:#?}", res);
 
     Ok(())
 }

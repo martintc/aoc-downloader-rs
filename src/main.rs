@@ -1,4 +1,4 @@
-use crate::{config::write_config, request::create_request_url};
+use crate::{config::write_config, request::{create_request_url, make_request}};
 
 mod config;
 mod request;
@@ -94,6 +94,8 @@ fn main() -> anyhow::Result<(), anyhow::Error> {
 
     let request_url = create_request_url(args.day, args.year);
     println!("{}", request_url);
+
+    make_request(&request_url, &config.api_key)?;
     
     Ok(())
 }
