@@ -17,5 +17,10 @@ pub fn make_request(url: &str, session_id: &str) -> anyhow::Result<(), anyhow::E
 
     print!("{:#?}", res);
 
+    let bytes = res.bytes()?;
+    let body = String::from_utf8(bytes.into_iter().collect())?;
+
+    println!("Body: {}", body);
+
     Ok(())
 }
